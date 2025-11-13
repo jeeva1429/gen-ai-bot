@@ -1,0 +1,25 @@
+﻿Interview Preparation Worksheet for Software Engineers
+Last updated: Jan 18, 2025
+
+
+Hey there!  I’m Leo, and with my experience as a Software Engineering Manager, I created this worksheet to help you understand the individual interview steps and prepare for your interviews in the best way. This sheet only summarises the steps, if you want to learn more, I’ve linked my videos to all chapters below.
+
+
+I hope that after preparing, you get the job you’ve always dreamed about!
+
+
+You can make a copy of this sheet if you want to edit it.
+Ok, let's get started…
+1: Why should you prepare?
+ Video: Software Engineer Interview: Why preparation is so important
+Impact
+First, preparing for a job interview allows you to present yourself in the best possible light. It lets you showcase your skills, experiences, and qualifications to the interviewer. You will increase your 
+
+
+ confidence,
+the opportunities you get, 
+ and your salary.
+2: What should you prepare?
+ Video: What to prepare for your next software engineer job interview.
+The four most important things
+You need to prepare:
