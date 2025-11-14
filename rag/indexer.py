@@ -6,7 +6,7 @@ from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from langchain_chroma import Chroma
 from google import genai
 from langchain_community.document_loaders import  CSVLoader, JSONLoader, TextLoader, BSHTMLLoader,PyPDFLoader
-
+from rag.handle_drive import (extract_pdf_metadata,call_download_file)
 
 # Load environment variables from .env file
 load_dotenv()
@@ -20,7 +20,11 @@ if not GEMINI_API_KEY:
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 PERSIST_DIR = os.path.join(BASE_DIR, "pdf-embeddings")
 COLLECTION_NAME = "pdf_docs"
-FOLDER_PATH = "./downloaded-files/"
+DOWNLOAD_DIR = os.path.join(BASE_DIR, "downloaded-files")
+TEMP_DIR = os.path.join(BASE_DIR, "temp")
+os.makedirs(DOWNLOAD_DIR, exist_ok=True)
+os.makedirs(TEMP_DIR, exist_ok=True)
+
 
 
 # Load document based on MIME type
@@ -59,13 +63,6 @@ def get_vector_store():
             embedding_function=get_embeddings(),
             collection_name=COLLECTION_NAME
         )
-
-
-def handle_new_file_embeddings(splits,collection_name="pdf_docs"):    
-        vectore_store = get_vector_store()
-        print(splits[0].metadata)
-        
-
 # create new storage or get the vector store if persistant storage exists
 def get_or_create_vector_store(splits=None, collection_name="pdf_docs"):
     # """Create a new Chroma vector store if it doesn't exist, otherwise load the existing one."""
@@ -122,33 +119,36 @@ def get_relevant_passage(query, k=1):
     vector_Store = get_vector_store()
     results = vector_Store.similarity_search(query, k=k)
     if not results:
-        return "No relevant passages found for the above query.", None
+        return "No relevant passages found for the above query.", "","",""
     
+
     # Return both passage text and source metadata
     passage_text = " ".join([r.page_content for r in results])
     source = results[0].metadata.get("source", "Unknown sources")
     content = results[0].page_content[:200]
-    web_link = results[0].metadata.get("webViewLink", "no link provided")
-    return passage_text, source, content,web_link
+    web_link = results[0].metadata.get("webViewLink", None)
+    doc_name = results[0].metadata["name"]
+    # print(passage_text,source,content,web_link)
+    return passage_text, source, content,web_link,doc_name
+
 
 # Function to create RAG prompt
 def make_rag_prompt(query, relevant_passage):
     """Constructs a contextual, friendly RAG prompt"""
-    passage_text, source,content,web_link = relevant_passage  # unpack tuple
+    passage_text, source,content,web_link,doc_name = relevant_passage  # unpack tuple
 
     formatted_passage = passage_text.replace("'", "").replace('"', "").replace("\n", " ")
     prompt = f"""
         You are a helpful and informative assistant that answers questions using the passage below.
         The one who asks the question is not very technical, so please keep your answers clear and simple. 
         Respond in a clear and concise manner and make it at least two sentences. 
-        If the passage does not contain the answer, say you don’t know.
-
+        If the passage does not contain the answer, tell them politely that you cannot find that information from the uploaded document.
         QUESTION: '{query}'
         PASSAGE: '{formatted_passage}'
 
         ANSWER:
     """
-    return prompt.strip(), source,content,web_link
+    return prompt.strip(), source,content,web_link,doc_name
 
 
 # Function to generate response
@@ -159,10 +159,11 @@ def generate_response(response_tuple):
             model="gemini-2.0-flash",
             contents=response_tuple[0]
         )
-        source = response_tuple[1]
+        source = response_tuple[1] 
         content = response_tuple[2]
-        webViewLink = response_tuple[3]
-        return response.text, source, content,webViewLink  # llm response + source + paragraph + webviewlink if exits
+        webViewLink = response_tuple[3] or None
+        doc_name = response_tuple[4] 
+        return response.text, source, content,webViewLink,doc_name  # llm response + source + paragraph + webviewlink if exits
     except Exception as e:
         return f"Error generating response: {str(e)}"
 
@@ -172,8 +173,7 @@ def index_google_pdfs():
     Load stored Google Drive PDF metadata from JSON file
     and return a dictionary mapping file_id -> metadata.
     """
-    drive_pdf_info_path = "./temp/demo_file_info.json"
-
+    drive_pdf_info_path = os.path.join(TEMP_DIR, "demo_file_info.json")
     # Read JSON safely
     try:
         with open(drive_pdf_info_path, "r") as file:
@@ -186,54 +186,34 @@ def index_google_pdfs():
     # Convert list of objects → single dictionary: { id: object }
     return {item["id"]: item for item in file_info}
 
-if __name__ == "__main__":
+def store_drive_pdf_embeddings():
     drive_pdf_metadata = index_google_pdfs()
-
     for file_id, metadata in drive_pdf_metadata.items():
-        file_path = f"./downloaded-files/{file_id}.pdf"
-        # Load document
-        doc_content = load_document(file_path=file_path, mime_type="application/pdf")
-        if not doc_content:
-            raise RuntimeError(f"Unable to load the document: {file_path}")
 
-        # Split into chunks
-        document_chunks = split_document_elements(doc_content)
-        if not document_chunks:
-            raise RuntimeError(f"Unable to split the document: {file_path}")
-        
-        # add name and webview link to pdf metadata
-        vector_store = get_vector_store()
+        file_path = os.path.join(DOWNLOAD_DIR, f"{file_id}.pdf") 
         if metadata["name"] != "test3.pdf":
-        # Add metadata to all chunks
+        # Load document
+            doc_content = load_document(file_path=file_path, mime_type="application/pdf")
+            if not doc_content:
+                raise RuntimeError(f"Unable to load the document: {file_path}")
+
+            # Split into chunks
+            document_chunks = split_document_elements(doc_content)
+            if not document_chunks:
+                raise RuntimeError(f"Unable to split the document: {file_path}")
+            
+            # add name and webview link to pdf metadata
+            vector_store = get_vector_store()
+            # if metadata["name"] != "test3.pdf":
+            # Add metadata to all chunks
             for doc in document_chunks:
                 doc.metadata["name"] = metadata["name"]
                 doc.metadata["webViewLink"] = metadata["webViewLink"]
             vector_store.add_documents(document_chunks)
-        res = get_relevant_passage("what cause him to disoriented")
-        print(res)
-        # print(document_chunks[0].metadata)
-        # # Store embeddings in vector store
-        # vector_store = get_or_create_vector_store(splits=document_chunks)
-        # if not vector_store:
-        #     raise RuntimeError(f"Unable to store embeddings for document: {file_path}")
 
 
-# # load all retrieved drive pdfs 
-# def load_file_info_json():
-#     filepath = "C:\\Users\\parkk\\Documents\\genai-task\\rag_folder\\file-info\\file_info.json"
-# # Embed all pdfs in a folder
 
-# def load_all_pdfs(folder_path):
-#     docs = []
-
-#     for file_name in os.listdir(folder_path):
-#         if file_name:
-#             loaded_doc = load_document(os.path.join(folder_path,file_name),"application/pdf")
-#             loaded_doc[0].metadata["owner"] = "Jeeva"
-#             print(loaded_doc[0].metadata)
-#             break
-#             # for d in loaded_doc:
-#                 # print(d["source"])
-# load_all_pdfs(FOLDER_PATH)
-
-# handle_new_file_embeddings(splits=splits)
+def initialize_rag_docs():
+    extract_pdf_metadata()
+    call_download_file()
+    store_drive_pdf_embeddings()
