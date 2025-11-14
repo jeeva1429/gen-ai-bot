@@ -25,6 +25,7 @@ interface Message {
   source: string;
   paragraph: string;
   webViewLink: string;
+  document_name : string;
 }
 
 export default function ChatApp() {
@@ -50,6 +51,7 @@ export default function ChatApp() {
       source: "",
       paragraph: "",
       webViewLink: "",
+      document_name : ""
     };
     const formData = new FormData();
     formData.append("query", input);
@@ -68,6 +70,7 @@ export default function ChatApp() {
         source?: string;
         paragraph?: string;
         webViewLink?: string;
+        doc_name?:string;
       } = await response.json();
 
       const botMessage: Message = {
@@ -76,6 +79,7 @@ export default function ChatApp() {
         source: data.source || "",
         paragraph: data.paragraph || "",
         webViewLink: data.webViewLink || "",
+        document_name : data.doc_name || ""
       };
 
       setMessages((prev) => [...prev, botMessage]);
@@ -89,6 +93,7 @@ export default function ChatApp() {
           source: "",
           paragraph: "",
           webViewLink: "",
+          document_name  : ""
         },
       ]);
     } finally {
@@ -112,6 +117,7 @@ export default function ChatApp() {
         source: "",
         paragraph: "",
         webViewLink: "",
+        document_name : "",
       },
     ]);
 
@@ -126,6 +132,7 @@ export default function ChatApp() {
         source?: string;
         paragraph?: string;
         webViewLink?: string;
+        doc_name?:string;
       } = await res.json();
 
       setMessages((prev) => [
@@ -136,6 +143,7 @@ export default function ChatApp() {
           source: data.source || "",
           paragraph: data.paragraph || "",
           webViewLink: data.webViewLink || "",
+          document_name : data.doc_name || "",
         },
       ]);
     } catch (err) {
@@ -148,6 +156,7 @@ export default function ChatApp() {
           source: "",
           paragraph: "",
           webViewLink: "",
+          document_name : ""
         },
       ]);
     }
@@ -267,11 +276,11 @@ export default function ChatApp() {
                     </Typography>
 
                     {/* Source Information */}
-                    {msg.source && (
+                    {msg.document_name && (
                       <Box sx={{ mt: 2, pt: 1.5, borderTop: "1px solid rgba(0,0,0,0.1)" }}>
                         <Chip
                           icon={<InsertDriveFileIcon />}
-                          label={msg.source}
+                          label={msg.document_name}
                           size="small"
                           sx={{
                             mb: 1,
@@ -292,7 +301,7 @@ export default function ChatApp() {
                             "{msg.paragraph}"
                           </Typography>
                         )}
-                        {msg.webViewLink && (
+                        {msg.webViewLink &&(
                           <Link
                             href={msg.webViewLink}
                             target="_blank"
