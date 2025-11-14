@@ -36,7 +36,7 @@ def download_file(file_id,creds):
 
 def extract_pdf_metadata():
   """Shows basic usage of the Drive v3 API.
-  Prints the names and ids of the first 10 files the user has access to.
+  queries the respected folder files or the particular file using their ids.
   """
   creds = None
   # The file token.json stores the user's access and refresh tokens, and is
@@ -77,10 +77,6 @@ def extract_pdf_metadata():
 #       return
     # items = results.get("files", [])
     file_metadata = service.files().get(fileId=file_id, fields="id, name, mimeType, webViewLink").execute()
-    # print(f"File Name: {file_metadata['name']}")
-    # print(f"File ID: {file_metadata['id']}")
-    # print(f"MIME Type: {file_metadata['mimeType']}")
-    # print(f"Web View Link: {file_metadata['webViewLink']}")
 
     # print("Files:")
     print("writing to file_info.json...")
@@ -100,10 +96,15 @@ def extract_pdf_metadata():
 
 
 if __name__ == "__main__":
+    """
+    function to query google drive api to get folders or file metadatas and writes to json file
+    """
     extract_pdf_metadata()
-    # The file token.json stores the user's access and refresh tokens, and is
-    # created automatically when the authorization flow completes for the first
-    # time.
+    
+    """
+     the commented code creates json object from the downloaded pdfs and write them to a json file.
+     
+    """
     # if os.path.exists("token.json"):
     #     creds = Credentials.from_authorized_user_file("token.json", SCOPES)
     #     file_info = None

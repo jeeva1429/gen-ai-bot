@@ -1,12 +1,14 @@
 fastapi[standard]
-uvicorn
 langchain
+json
 langchain-text-splitters
 langchain-community
 langchain-google-genai
 langchain-chroma
-pypdf
-openai
 python-dotenv
 chromadb
+google-auth
+google-auth-httplib2
+google-auth-oauthlib
+google-api-python-client
 google

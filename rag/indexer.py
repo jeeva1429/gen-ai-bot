@@ -67,26 +67,6 @@ def handle_new_file_embeddings(splits,collection_name="pdf_docs"):
         print(splits[0].metadata)
         
 
-# # load all retrieved drive pdfs 
-# def load_file_info_json():
-#     filepath = "C:\\Users\\parkk\\Documents\\genai-task\\rag_folder\\file-info\\file_info.json"
-# # Embed all pdfs in a folder
-
-# def load_all_pdfs(folder_path):
-#     docs = []
-
-#     for file_name in os.listdir(folder_path):
-#         if file_name:
-#             loaded_doc = load_document(os.path.join(folder_path,file_name),"application/pdf")
-#             loaded_doc[0].metadata["owner"] = "Jeeva"
-#             print(loaded_doc[0].metadata)
-#             break
-#             # for d in loaded_doc:
-#                 # print(d["source"])
-# load_all_pdfs(FOLDER_PATH)
-
-# handle_new_file_embeddings(splits=splits)
-
 # create new storage or get the vector store if persistant storage exists
 def get_or_create_vector_store(splits=None, collection_name="pdf_docs"):
     # """Create a new Chroma vector store if it doesn't exist, otherwise load the existing one."""
@@ -114,21 +94,28 @@ def get_or_create_vector_store(splits=None, collection_name="pdf_docs"):
     return vector_store
 
 
-# function to load the stored google pdf docs metadata from json file
+
+# Due to api limits, For the demo, I am choosing a single pdf file for RAG implementation and Viewable link generation in the UI
+# Logic remains the same for multiple files structure
 def handle_google_drive_links():
-    # Due to api limits, For the demo, I am choosing a single pdf file for RAG implementation and Viewable link generation in the UI
-    # Logic remains the same for multiple files structure
+    """
+    Load stored Google Drive PDF metadata from JSON file
+    and return a dictionary mapping file_id -> metadata.
+    """
     drive_pdf_info_path = "./temp/demo_file_info.json"
-    file_info = None
-    with open(drive_pdf_info_path, "r") as file:
-        file_info = json.load(file)
-    updated_file_info = []
-    if file_info:
-        for drive_obj in file_info:
-            new_drive_object = {}
-            new_drive_object[f"{drive_obj["id"]}"] = drive_obj
-            updated_file_info.append(new_drive_object)
-    return updated_file_info
+
+    # Read JSON safely
+    try:
+        with open(drive_pdf_info_path, "r") as file:
+            file_info = json.load(file)
+    except FileNotFoundError:
+        raise ValueError("Metadata file not found at: " + drive_pdf_info_path)
+    except json.JSONDecodeError:
+        raise ValueError("Invalid JSON format in metadata file.")
+
+    # Convert list of objects → single dictionary: { id: object }
+    return {item["id"]: item for item in file_info}
+
 
 # Function to get relevant passages
 def get_relevant_passage(query, k=1):
@@ -180,3 +167,23 @@ def generate_response(promptObj):
 
     
 
+
+# # load all retrieved drive pdfs 
+# def load_file_info_json():
+#     filepath = "C:\\Users\\parkk\\Documents\\genai-task\\rag_folder\\file-info\\file_info.json"
+# # Embed all pdfs in a folder
+
+# def load_all_pdfs(folder_path):
+#     docs = []
+
+#     for file_name in os.listdir(folder_path):
+#         if file_name:
+#             loaded_doc = load_document(os.path.join(folder_path,file_name),"application/pdf")
+#             loaded_doc[0].metadata["owner"] = "Jeeva"
+#             print(loaded_doc[0].metadata)
+#             break
+#             # for d in loaded_doc:
+#                 # print(d["source"])
+# load_all_pdfs(FOLDER_PATH)
+
+# handle_new_file_embeddings(splits=splits)

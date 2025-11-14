@@ -2,7 +2,7 @@ import os
 from fastapi import FastAPI,Form,UploadFile,HTTPException,File
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
-from rag_folder.indexer import get_relevant_passage,generate_response, make_rag_prompt,load_document,split_document_elements,get_or_create_vector_store
+from rag.indexer import get_relevant_passage,generate_response, make_rag_prompt,load_document,split_document_elements,get_or_create_vector_store
 import shutil
 app = FastAPI()
 
