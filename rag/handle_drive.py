@@ -8,6 +8,14 @@ from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 from googleapiclient.http import MediaIoBaseDownload
 
+
+
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))  # points to rag folder
+DOWNLOAD_DIR = os.path.join(BASE_DIR, "downloaded-files")
+TEMP_DIR = os.path.join(BASE_DIR, "temp")
+os.makedirs(DOWNLOAD_DIR, exist_ok=True)
+os.makedirs(TEMP_DIR, exist_ok=True)
 # from 
 # If modifying these scopes, delete the file token.json.
 SCOPES = ["https://www.googleapis.com/auth/drive"]
@@ -83,9 +91,13 @@ def extract_pdf_metadata():
     print("writing to file_info.json...")
     # with open("file_info.json", "w") as f:
     #   json.dump(items,f,indent=4)
-    with open("./temp/demo_file_info.json", "w") as f:
-      file_metadata = [file_metadata]
-      json.dump(file_metadata,f,indent=4)  
+    file_metadata = service.files().get(fileId=file_id, fields="id, name, mimeType, webViewLink").execute()
+
+    with open(os.path.join(TEMP_DIR, "demo_file_info.json"), "w") as f:
+        file_metadata = [file_metadata]   # <-- wrapping in a list
+        json.dump(file_metadata, f, indent=4)
+
+
     print("Done.")
     # for item in items:
     #   print(f"{item['name']} ({item['id']})" )
@@ -95,37 +107,22 @@ def extract_pdf_metadata():
 
 
 
-
-if __name__ == "__main__":
-    """
-    function to query google drive api to get folders or file metadata information and writes to json file
-    """
-    extract_pdf_metadata()
-    
-    """
-    function to download the pdfs from google drive api using the extracted pdf's file Id.
-    """
-    if os.path.exists("token.json"):
-        creds = Credentials.from_authorized_user_file("token.json", SCOPES)
-        file_info = None
-        with open("./temp/demo_file_info.json", "r") as f:
-            file_info = json.load(f)
-        for item in file_info:
-            file_Id = item["id"]
-            downloaded_content = download_file(file_Id,creds=creds)
-            if downloaded_content:
-                with open(f"./downloaded-files/{file_Id}.pdf", "wb") as f:
-                    f.write(downloaded_content)
-                print("file downloaded successfully")
-            else:
-                print('error!!')
+def call_download_file():
+  if os.path.exists("token.json"):
+      creds = Credentials.from_authorized_user_file("token.json", SCOPES)
+      file_info = None
+      with open(os.path.join(TEMP_DIR, "demo_file_info.json"), "r") as f:
+          file_info = json.load(f)
+      
+      for item in file_info:
+        # print('current item---',item)
+        file_Id = item["id"]
+        downloaded_content = download_file(file_Id,creds=creds)
+        if downloaded_content:
+            with open(os.path.join(DOWNLOAD_DIR, f"{file_Id}.pdf"), "wb") as f:
+                f.write(downloaded_content)
+            print("file downloaded successfully")
+        else:
+            print('error!!')
 
 
-# [
-#     {
-#         "id": "1Gq3ZIv0uOJuBSYFCPY0rKxlTQqb8fNUi",
-#         "name": "test3.pdf",
-#         "mimeType": "application/pdf",
-#         "webViewLink": "https://drive.google.com/file/d/1Gq3ZIv0uOJuBSYFCPY0rKxlTQqb8fNUi/view?usp=drivesdk"
-#     }
-# ]
