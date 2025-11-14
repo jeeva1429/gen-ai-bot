@@ -15,6 +15,9 @@ A **Retrieval-Augmented Generation (RAG) Chat Application** that allows users to
 
 ---
 
+## System Architecture
+![RAG application system architecture](https://github.com/jeeva1429/gen-ai-bot/blob/main/rag-bot-design.png)
+
 ## Tech Stack
 
 **Backend:**
@@ -29,3 +32,4 @@ A **Retrieval-Augmented Generation (RAG) Chat Application** that allows users to
 - TypeScript
 - Material UI (MUI)
 - Vite for fast development
+
