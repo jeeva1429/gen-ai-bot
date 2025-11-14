@@ -2,6 +2,7 @@ import os
 from fastapi import FastAPI, Form, UploadFile, HTTPException, File
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
+# from handle_drive.
 from rag.indexer import (
     get_relevant_passage,
     generate_response,
@@ -9,6 +10,7 @@ from rag.indexer import (
     load_document,
     split_document_elements,
     get_or_create_vector_store,
+    initialize_rag_docs
 )
 import shutil
 
@@ -22,6 +24,13 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Called only once during the startup of the server
+# commented this not to call again to save resources
+"""@app.on_event("startup")
+async def download_and_embed_drive_docs():
+    initialize_rag_docs()"""
+
 
 UPLOAD_DIR = "./uploaded_files/"
 @app.post("/upload/")
@@ -52,6 +61,9 @@ async def upload_file(file: UploadFile = File(...)):
             document_chunks = split_document_elements(get_doc_content)
             if not document_chunks:
                 raise HTTPException(status_code=400, detail="Failed to split document")
+            
+            for doc in document_chunks:
+                doc.metadata["name"] = file.filename
             # Create or update vector store
             vector_store = get_or_create_vector_store(splits=document_chunks)
             if not vector_store:
@@ -81,16 +93,18 @@ async def query_file(query: str = Form(...)):
       - Generate model response
     """
     get_relevant_passage_result = get_relevant_passage(query, k=3)
+    # print(get_relevant_passage_result)
     rag_prompt = make_rag_prompt(query, get_relevant_passage_result)
-    response_text, source, content,webViewLink = generate_response(rag_prompt)
+    response_text, source, content,webViewLink, doc_name = generate_response(rag_prompt)
 
     return JSONResponse(content={
         "response": response_text,
         "source": source,
         "paragraph": content,
-        "webViewLink" : webViewLink if webViewLink else "" 
+        "webViewLink" : webViewLink if webViewLink else None ,
+        "doc_name":doc_name
     })
-
+    
 @app.get("/")
 def root():
     """Root endpoint for quick health check."""
