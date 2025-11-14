@@ -191,7 +191,6 @@ if __name__ == "__main__":
 
     for file_id, metadata in drive_pdf_metadata.items():
         file_path = f"./downloaded-files/{file_id}.pdf"
-
         # Load document
         doc_content = load_document(file_path=file_path, mime_type="application/pdf")
         if not doc_content:

@@ -18,3 +18,7 @@ venv/
 
 # node modules
 ./node_modules
+
+
+./downloaded-files
+./pdf-embeddings
