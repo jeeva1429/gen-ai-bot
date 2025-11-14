@@ -96,7 +96,7 @@ def get_or_create_vector_store(splits=None, collection_name="pdf_docs"):
 
 # Due to api limits, For the demo, I am choosing a single pdf file for RAG implementation and Viewable link generation in the UI
 # Logic remains the same for multiple files structure
-def handle_google_drive_links():
+def index_google_pdfs():
     """
     Load stored Google Drive PDF metadata from JSON file
     and return a dictionary mapping file_id -> metadata.
@@ -128,12 +128,13 @@ def get_relevant_passage(query, k=1):
     passage_text = " ".join([r.page_content for r in results])
     source = results[0].metadata.get("source", "Unknown sources")
     content = results[0].page_content[:200]
-    return passage_text, source, content
+    web_link = results[0].metadata.get("webViewLink", "no link provided")
+    return passage_text, source, content,web_link
 
 # Function to create RAG prompt
 def make_rag_prompt(query, relevant_passage):
     """Constructs a contextual, friendly RAG prompt"""
-    passage_text, source,content = relevant_passage  # unpack tuple
+    passage_text, source,content,web_link = relevant_passage  # unpack tuple
 
     formatted_passage = passage_text.replace("'", "").replace('"', "").replace("\n", " ")
     prompt = f"""
@@ -147,24 +148,75 @@ def make_rag_prompt(query, relevant_passage):
 
         ANSWER:
     """
-    return prompt.strip(), source,content
+    return prompt.strip(), source,content,web_link
 
 
 # Function to generate response
-def generate_response(promptObj):
+def generate_response(response_tuple):
     client = genai.Client()
     try:
         response = client.models.generate_content(
             model="gemini-2.0-flash",
-            contents=promptObj[0]
+            contents=response_tuple[0]
         )
-        source = promptObj[1]
-        content = promptObj[2]
-        return response.text, source, content  # llm response + source + paragraph
+        source = response_tuple[1]
+        content = response_tuple[2]
+        webViewLink = response_tuple[3]
+        return response.text, source, content,webViewLink  # llm response + source + paragraph + webviewlink if exits
     except Exception as e:
         return f"Error generating response: {str(e)}"
 
     
+def index_google_pdfs():
+    """
+    Load stored Google Drive PDF metadata from JSON file
+    and return a dictionary mapping file_id -> metadata.
+    """
+    drive_pdf_info_path = "./temp/demo_file_info.json"
+
+    # Read JSON safely
+    try:
+        with open(drive_pdf_info_path, "r") as file:
+            file_info = json.load(file)
+    except FileNotFoundError:
+        raise ValueError("Metadata file not found at: " + drive_pdf_info_path)
+    except json.JSONDecodeError:
+        raise ValueError("Invalid JSON format in metadata file.")
+
+    # Convert list of objects → single dictionary: { id: object }
+    return {item["id"]: item for item in file_info}
+
+if __name__ == "__main__":
+    drive_pdf_metadata = index_google_pdfs()
+
+    for file_id, metadata in drive_pdf_metadata.items():
+        file_path = f"./downloaded-files/{file_id}.pdf"
+
+        # Load document
+        doc_content = load_document(file_path=file_path, mime_type="application/pdf")
+        if not doc_content:
+            raise RuntimeError(f"Unable to load the document: {file_path}")
+
+        # Split into chunks
+        document_chunks = split_document_elements(doc_content)
+        if not document_chunks:
+            raise RuntimeError(f"Unable to split the document: {file_path}")
+        
+        # add name and webview link to pdf metadata
+        vector_store = get_vector_store()
+        if metadata["name"] != "test3.pdf":
+        # Add metadata to all chunks
+            for doc in document_chunks:
+                doc.metadata["name"] = metadata["name"]
+                doc.metadata["webViewLink"] = metadata["webViewLink"]
+            vector_store.add_documents(document_chunks)
+        res = get_relevant_passage("what cause him to disoriented")
+        print(res)
+        # print(document_chunks[0].metadata)
+        # # Store embeddings in vector store
+        # vector_store = get_or_create_vector_store(splits=document_chunks)
+        # if not vector_store:
+        #     raise RuntimeError(f"Unable to store embeddings for document: {file_path}")
 
 
 # # load all retrieved drive pdfs 

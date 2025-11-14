@@ -1,0 +1,26 @@
+﻿Computer Fundamentals & Problem Solving
+Unit 1
+Introduction to Computers
+The word computer was derived from the word compute, which apparently means to calculate. A computer is an electronic device used to perform high-end arithmetic operations at high speed.
+A computer is also used as a data processor in order to process the data. It also stores data and retrieves it as and when desired.
+Data processing is the process of manipulating data to get the desired output.
+Data processing is classified into three categories:
+* Input: Input is the process of capturing data
+* Data Manipulation: Data Manipulation is processing the data to the desired output
+* Output: is the desired result
+Technically, a computer is used to perform various activities, but these activities revolve around input, manipulation, and output. Activities:
+* Accepting Data
+* Storing Data
+* Processing Data
+* Retrieving the Stored Data
+* Printing results in the desired format
+A computer is a combination of various devices integrated together to perform these activities.
+Keyboard: 
+* A keyboard is an input device that enables you to enter data into a computer.
+* It is also known as a primary device to input text.
+* It translates the pressed keys into a signal for the computer to understand.
+Mouse:
+* With the help of the mouse, we can take graphical inputs.
+* A mouse is also an input device that controls the coordinates of a cursor and displays its movement on the monitor.
+* It is a common input device for graphical interfaces.
+CPU:

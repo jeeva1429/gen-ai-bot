@@ -12,10 +12,11 @@ from googleapiclient.http import MediaIoBaseDownload
 # If modifying these scopes, delete the file token.json.
 SCOPES = ["https://www.googleapis.com/auth/drive"]
 
+# function to download specified file id
 def download_file(file_id,creds):
-  print('starting...')
-  print(file_id)
-  print(creds)
+  # print('starting...')
+  # print(file_id)
+  # print(creds)
   try:
     service = build("drive", "v3", credentials=creds)
     req = service.files().get_media(fileId=file_id)
@@ -97,26 +98,34 @@ def extract_pdf_metadata():
 
 if __name__ == "__main__":
     """
-    function to query google drive api to get folders or file metadatas and writes to json file
+    function to query google drive api to get folders or file metadata information and writes to json file
     """
     extract_pdf_metadata()
     
     """
-     the commented code creates json object from the downloaded pdfs and write them to a json file.
-     
+    function to download the pdfs from google drive api using the extracted pdf's file Id.
     """
-    # if os.path.exists("token.json"):
-    #     creds = Credentials.from_authorized_user_file("token.json", SCOPES)
-    #     file_info = None
-    #     with open("file_info.json", "r") as f:
-    #         file_info = json.load(f)
-    #         # print(file_info[:3])
-    #     for item in file_info:
-    #         file_Id = item["id"]
-    #         downloaded_content = download_file(file_Id,creds=creds)
-    #         if downloaded_content:
-    #             with open(f"./downloaded-files/{file_Id}", "wb") as f:
-    #                 f.write(downloaded_content)
-    #             print("file downloaded successfully")
-    #         else:
-    #             print('error!!')
+    if os.path.exists("token.json"):
+        creds = Credentials.from_authorized_user_file("token.json", SCOPES)
+        file_info = None
+        with open("./temp/demo_file_info.json", "r") as f:
+            file_info = json.load(f)
+        for item in file_info:
+            file_Id = item["id"]
+            downloaded_content = download_file(file_Id,creds=creds)
+            if downloaded_content:
+                with open(f"./downloaded-files/{file_Id}.pdf", "wb") as f:
+                    f.write(downloaded_content)
+                print("file downloaded successfully")
+            else:
+                print('error!!')
+
+
+# [
+#     {
+#         "id": "1Gq3ZIv0uOJuBSYFCPY0rKxlTQqb8fNUi",
+#         "name": "test3.pdf",
+#         "mimeType": "application/pdf",
+#         "webViewLink": "https://drive.google.com/file/d/1Gq3ZIv0uOJuBSYFCPY0rKxlTQqb8fNUi/view?usp=drivesdk"
+#     }
+# ]
